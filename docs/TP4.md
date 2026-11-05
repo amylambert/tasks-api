@@ -343,7 +343,7 @@ Dans l'onglet *Actions*, suivez le run : approuvez la production (bouton *Review
 
 > ℹ️ Le dépôt local `tasks-config` est maintenant **en retard** (le pipeline y a poussé un commit). Si vous y retouchez, faites d'abord `git pull`.
 
-**6. Vérifier**
+**6. Vérifier **
 Les pods ont été remplacés : l'ancien tunnel est coupé (message `lost connection to pod`). Relancez-le, puis appelez l'API :
 ```bash
 kubectl port-forward svc/tasks-api -n tasks 8081:80
