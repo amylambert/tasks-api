@@ -139,7 +139,7 @@ jobs:
     permissions:
       contents: read
     env:
-      VERSION: ${{ github.ref_name }}   # le nom du tag, par exemple v0.2.0
+      VERSION: ${{ needs.build.outputs.release_tag }}   # le nom du tag, par exemple v0.2.0
     steps:
       - name: Récupérer le dépôt applicatif
         uses: actions/checkout@v6       # même version que vos autres jobs
