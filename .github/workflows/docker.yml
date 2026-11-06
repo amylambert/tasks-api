@@ -133,32 +133,29 @@ jobs:
           curl -f http://localhost:8000/version
   
   update-config:
-    needs: deploy-production                         # TROU 1 : ce job démarre après quel job ?
-    if: startsWith(github.ref, 'refs/tags/v')   # TROU 2 : uniquement sur un tag : regardez la ligne `if` de deploy-production ; si elle est écrite autrement, recopiez-la telle quelle à la place de cette ligne
+    needs: [build, deploy-production]
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     env:
-      VERSION: ${{ needs.build.outputs.release_tag }}   # le nom du tag, par exemple v0.2.0
+      VERSION: ${{ needs.build.outputs.release_tag }}
     steps:
-      - name: Récupérer le dépôt applicatif
-        uses: actions/checkout@v6       # même version que vos autres jobs
-
-      - name: Récupérer le dépôt de configuration
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
-          repository: amylambert/tasks-config  # TROU 3 : votre compte GitHub (minuscules)
+          repository: ${{ github.repository_owner }}/tasks-config # owner name will change in the coming days
           token: ${{ secrets.CONFIG_REPO_TOKEN }}
-          path: config                     # TROU 4 : le dossier attendu par la commande suivante
-
-      - name: Mettre à jour la version de l'image
-        run: bash scripts/set-image-tag.sh config/k8s/deployment.yaml "${VERSION#v}"
-
-      - name: Commiter et pousser dans tasks-config
+          path: config
+      - name: Mettre à jour la version
+        run: bash scripts/set-image-tag.sh config/k8s/deployment.yaml "$VERSION"
+      - name: Commiter et pousser
+        working-directory: config
         run: |
-          cd config
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add k8s/deployment.yaml                   # TROU 5 : le fichier modifié, chemin depuis la racine de tasks-config
-          git commit -m "Déploiement de tasks-api ${VERSION#v}"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add k8s/deployment.yaml
+          if git diff --cached --quiet; then
+            echo "Aucun changement : la version $VERSION est déjà déployée."
+            exit 0
+          fi
+          git commit -m "Déploie $VERSION"
           git push
